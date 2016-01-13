@@ -10,14 +10,14 @@
 #include <sys/msg.h>
 struct msgbuf {
   long type;
-  int x;
-  char tab[10];
-}m1, m2;
+  char tab[100];
+}m1;
 int main(int argc, char* argv[]){
-  int id = msgget(12345, 0644 | IPC_CREAT);
-  m1.type = 1;
-  m1.x = atoi(argv[1]);
-  strcpy(m1.tab, "Hello");
-  msgsnd(id, &m1, sizeof(m1) - sizeof(long), 0);
+int id = msgget(7777, 0644 | IPC_CREAT);
+printf("%s\n", "Asd");
+  // while(1) {
+    msgrcv(id, &m1, sizeof(m1) - sizeof(long), 1, 0);
+    printf("%s\n", m1.tab);    
+  // }
   return 0;
 }
