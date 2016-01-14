@@ -10,14 +10,18 @@
 #include <sys/msg.h>
 struct msgbuf {
   long type;
-  char tab[100];
+  char PESEL[100];
+  char PID[100];
+  int isLogged;
+  char message[100];
 }m1;
 int main(int argc, char* argv[]){
 int id = msgget(7777, 0644 | IPC_CREAT);
-printf("%s\n", "Asd");
-  // while(1) {
-    msgrcv(id, &m1, sizeof(m1) - sizeof(long), 1, 0);
-    printf("%s\n", m1.tab);    
-  // }
+  msgrcv(id, &m1, sizeof(m1) - sizeof(long), 1, 0);
+  printf("%s\n", m1.PESEL);    
+  printf("%s\n", m1.PID);
+  m1.isLogged = 1;
+  m1.type = 2;  
+  msgsnd(id, &m1, sizeof(m1) - sizeof(long), 0);
   return 0;
 }

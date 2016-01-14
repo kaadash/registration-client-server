@@ -10,20 +10,71 @@
 #include <sys/msg.h>
 struct msgbuf {
   long type;
-  char tab[100];
+  char PESEL[100];
+  char PID[100];
+  int isLogged;
+  char message[100];
 }m1;
 int main(int argc, char* argv[]){
   int id = msgget(7777, 0644 | IPC_CREAT);
-  m1.type = 1;
-  // msgsnd(id, &m1, sizeof(m1) - sizeof(long), 0);
+  int loggedIn = 0;
   int choice;
   char PESEL[100];
   while(1){
-    printf("%s\n", "Please log in using your PESEL");
-    scanf("%s", PESEL);
-    strcpy(m1.tab, PESEL);
-    printf("%s\n", m1.tab);
-    msgsnd(id, &m1, sizeof(m1) - sizeof(long), 0);
+    if(loggedIn != 1) {
+      printf("%s\n", "Please log in using your PESEL");
+      scanf("%s", PESEL);
+      m1.type = 1;
+      strcpy(m1.PESEL, PESEL);
+      msgsnd(id, &m1, sizeof(m1) - sizeof(long), 0);
+      msgrcv(id, &m1, sizeof(m1) - sizeof(long), 2, 0);
+      loggedIn = m1.isLogged;
+    }
+    else {
+      printf("%s\n", "0: register meeting"); 
+      printf("%s\n", "1: show list of doctors in some period"); 
+      printf("%s\n", "2: show list of free terms"); 
+      printf("%s\n", "3: show list of free terms to specified doctor"); 
+      printf("%s\n", "4: show status of meeting"); 
+      printf("%s\n", "5: show list of doctors in some period"); 
+      printf("%s\n", "6: log out");
+
+      scanf("%d", &choice);
+      switch(choice)
+      {
+        case 0: 
+          printf("%s\n", "register meeting"); 
+        break;
+       
+        case 1: 
+          printf("%s\n", "show list of doctors in some period"); 
+        break;
+
+        case 2: 
+          printf("%s\n", "show list of free terms"); 
+        break;
+
+        case 3: 
+          printf("%s\n", "show list of free terms to specified doctor"); 
+        break;
+        
+        case 4: 
+          printf("%s\n", "show status of meeting"); 
+        break;
+        
+        case 5: 
+          printf("%s\n", "show list of doctors in some period"); 
+        break;
+
+        case 6: 
+          loggedIn = 0; 
+          printf("%s\n", "log out correctly");
+        break;
+       
+        default:
+          printf("%s\n", "choose other option"); 
+      }
+    }
   }
   return 0;
 }
