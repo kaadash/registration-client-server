@@ -9,14 +9,22 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 struct msgbuf {
-  long type;
-  char PESEL[100];
-  char PID[100];
+  long type; // PID of patient
+  int command; // type of command
+  char msgTypeOne[100];
+  char msgTypeTwo[100];
+  char msgTypeSecond[100];
   int isLogged;
-  char message[100];
-}m1;
+}message;
+// struct msgbuf {
+//   long type; <- PID of current patient
+//    int command <- type of command - can be registration, showing list of appointment
+//   char message[100]; <- there can be more types of messages it depends on my specification
+// }message;
+
 int main(int argc, char* argv[]){
   int id = msgget(7777, 0644 | IPC_CREAT);
+  int queueTypeId = msgget(7777, 0644 | IPC_CREAT);
   int loggedIn = 0;
   int choice;
   char PESEL[100];
@@ -24,11 +32,12 @@ int main(int argc, char* argv[]){
     if(loggedIn != 1) {
       printf("%s\n", "Please log in using your PESEL");
       scanf("%s", PESEL);
-      m1.type = 1;
-      strcpy(m1.PESEL, PESEL);
-      msgsnd(id, &m1, sizeof(m1) - sizeof(long), 0);
-      msgrcv(id, &m1, sizeof(m1) - sizeof(long), 2, 0);
-      loggedIn = m1.isLogged;
+      message.type = 1;
+      strcpy(message.msgTypeOne, PESEL);
+      message.command = 2;
+      msgsnd(id, &message, sizeof(message) - sizeof(long), 0);
+      msgrcv(id, &message, sizeof(message) - sizeof(long), 2, 0);
+      loggedIn = message.isLogged;
     }
     else {
       printf("%s\n", "0: register meeting"); 
