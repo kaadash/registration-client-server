@@ -10,12 +10,13 @@
 #include <sys/msg.h>
 struct msgbuf {
   long type; // PID of patient
+  long PID;
   int command; // type of command
   char msgTypeOne[100];
   char msgTypeTwo[100];
   char msgTypeSecond[100];
   int isLogged;
-}message;
+}messageReceived, messageToSend;
 // struct msgbuf {
 //   long type; <- PID of current patient
 //    int command <- type of command - can be registration, showing list of appointment
@@ -23,8 +24,8 @@ struct msgbuf {
 // }message;
 
 int main(int argc, char* argv[]){
-  int id = msgget(7777, 0644 | IPC_CREAT);
-  int queueTypeId = msgget(7777, 0644 | IPC_CREAT);
+  long patientPID = getpid();
+  int queueTypeId = msgget(9876, 0777 | IPC_CREAT);
   int loggedIn = 0;
   int choice;
   char PESEL[100];
@@ -32,12 +33,15 @@ int main(int argc, char* argv[]){
     if(loggedIn != 1) {
       printf("%s\n", "Please log in using your PESEL");
       scanf("%s", PESEL);
-      message.type = 1;
-      strcpy(message.msgTypeOne, PESEL);
-      message.command = 2;
-      msgsnd(id, &message, sizeof(message) - sizeof(long), 0);
-      msgrcv(id, &message, sizeof(message) - sizeof(long), 2, 0);
-      loggedIn = message.isLogged;
+      // strcpy(message.msgTypeOne, PESEL);
+      messageToSend.type = 1;
+      messageToSend.PID = patientPID;
+      messageToSend.command = -1;
+      printf("%s\n", "sending");
+      msgsnd(queueTypeId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
+      msgrcv(queueTypeId, &messageReceived, sizeof(messageReceived) - sizeof(long), patientPID, 0);
+      printf("%s\n", "Udalo sie");
+      loggedIn = messageReceived.isLogged;
     }
     else {
       printf("%s\n", "0: register meeting"); 
@@ -60,6 +64,8 @@ int main(int argc, char* argv[]){
         break;
 
         case 2: 
+          messageToSend.command = 2;
+          msgsnd(queueTypeId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
           printf("%s\n", "show list of free terms"); 
         break;
 

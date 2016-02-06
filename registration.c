@@ -24,12 +24,13 @@ struct registration {
 
 struct msgbuf {
   long type; // PID of patient
+  long PID;
   int command; // type of command
   char msgTypeOne[100];
   char msgTypeTwo[100];
   char msgTypeSecond[100];
   int isLogged;
-}message;
+}messageReceived, messageToSend;
 
 struct registration allRegistration[100];
 
@@ -84,43 +85,51 @@ void displayAllFreeTerms() {
 
 int main(int argc, char* argv[]){
   generateSampleRegistrations();
-  int patientQueueId = msgget(7777, 0644 | IPC_CREAT);
-  msgrcv(patientQueueId, &message, sizeof(message) - sizeof(long), 1, 0);
-  message.isLogged = 1;
-  // msgsnd(patientQueueId, &message, sizeof(message) - sizeof(long), 0);
+  int patientQueueId = msgget(9876, 0777 | IPC_CREAT);
   while(1) {
-    switch(message.command)
-    {
-      case 0: 
-        printf("%s\n", "register meeting"); 
-      break;
-     
-      case 1: 
-        printf("%s\n", "show list of doctors in some period"); 
-      break;
+    msgrcv(patientQueueId, &messageReceived, sizeof(messageReceived) - sizeof(long), 0, 0);
+    if(messageReceived.isLogged == 0 && messageReceived.command == -1) {
+      printf("pid ::: %ld\n", messageReceived.PID);
+      messageToSend.isLogged = 1;
+      messageToSend.type = messageReceived.PID;
+      msgsnd(patientQueueId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
+    }
+    else {
+      switch(messageReceived.command)
+      {
+        case 0: 
+          printf("%s\n", "register meeting"); 
+        break;
+       
+        case 1: 
+          printf("%s\n", "show list of doctors in some period"); 
+        break;
 
-      case 2: 
-        displayAllFreeTerms();
-      break;
+        case 2:
+          messageToSend.type = messageReceived.PID;
+          msgsnd(patientQueueId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
+          displayAllFreeTerms();
+        break;
 
-      case 3: 
-        printf("%s\n", "show list of free terms to specified doctor"); 
-      break;
-      
-      case 4: 
-        printf("%s\n", "show status of meeting"); 
-      break;
-      
-      case 5: 
-        printf("%s\n", "show list of doctors in some period"); 
-      break;
+        case 3: 
+          printf("%s\n", "show list of free terms to specified doctor"); 
+        break;
+        
+        case 4: 
+          printf("%s\n", "show status of meeting"); 
+        break;
+        
+        case 5: 
+          printf("%s\n", "show list of doctors in some period"); 
+        break;
 
-      case 6: 
-        printf("%s\n", "log out correctly");
-      break;
-     
-      default:
-        printf("%s\n", "choose other option"); 
+        case 6: 
+          printf("%s\n", "log out correctly");
+        break;
+       
+        default:
+          printf("%s\n", "choose other option"); 
+      }
     }
   }
   return 0;
