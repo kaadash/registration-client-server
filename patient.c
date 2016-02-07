@@ -12,10 +12,11 @@ struct msgbuf {
   long type; // PID of patient
   long PID;
   int command; // type of command
-  char msgTypeOne[100];
-  char msgTypeTwo[100];
-  char msgTypeSecond[100];
   int isLogged;
+  char stringMsgTypeOne[100];
+  char stringMsgTypeTwo[100];
+  char stringMsgTypeThree[100];
+  char longMessage[1000];
 }messageReceived, messageToSend;
 // struct msgbuf {
 //   long type; <- PID of current patient
@@ -25,7 +26,7 @@ struct msgbuf {
 
 int main(int argc, char* argv[]){
   long patientPID = getpid();
-  int queueTypeId = msgget(9876, 0777 | IPC_CREAT);
+  int queueTypeId = msgget(9875, 0777 | IPC_CREAT);
   int loggedIn = 0;
   int choice;
   char PESEL[100];
@@ -33,14 +34,14 @@ int main(int argc, char* argv[]){
     if(loggedIn != 1) {
       printf("%s\n", "Please log in using your PESEL");
       scanf("%s", PESEL);
-      // strcpy(message.msgTypeOne, PESEL);
+      // strcpy(message.stringMsgTypeOne, PESEL);
       messageToSend.type = 1;
       messageToSend.PID = patientPID;
       messageToSend.command = -1;
       printf("%s\n", "sending");
       msgsnd(queueTypeId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
       msgrcv(queueTypeId, &messageReceived, sizeof(messageReceived) - sizeof(long), patientPID, 0);
-      printf("%s\n", "Udalo sie");
+      printf("%s ---- %d ---- %ld\n", "Udalo sie", messageReceived.isLogged, messageReceived.PID);
       loggedIn = messageReceived.isLogged;
     }
     else {
@@ -53,6 +54,7 @@ int main(int argc, char* argv[]){
       printf("%s\n", "6: log out");
 
       scanf("%d", &choice);
+      char tempMessage[100]; 
       switch(choice)
       {
         case 0: 
@@ -63,10 +65,19 @@ int main(int argc, char* argv[]){
           printf("%s\n", "show list of doctors in some period"); 
         break;
 
-        case 2: 
+        case 2:
+          printf("%s\n", "show list of free terms"); 
+          printf("%s\n", "Write year: ");
+          scanf("%s", tempMessage);
+          strcpy(messageToSend.stringMsgTypeOne, tempMessage);
+          printf("%s\n", "Write month: ");
+          scanf("%s", tempMessage);
+          strcpy(messageToSend.stringMsgTypeTwo, tempMessage);
+          printf("%s\n", "Write day: ");
+          scanf("%s", tempMessage);
+          strcpy(messageToSend.stringMsgTypeThree, tempMessage);
           messageToSend.command = 2;
           msgsnd(queueTypeId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
-          printf("%s\n", "show list of free terms"); 
         break;
 
         case 3: 

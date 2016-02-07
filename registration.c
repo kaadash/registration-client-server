@@ -26,10 +26,11 @@ struct msgbuf {
   long type; // PID of patient
   long PID;
   int command; // type of command
-  char msgTypeOne[100];
-  char msgTypeTwo[100];
-  char msgTypeSecond[100];
   int isLogged;
+  char stringMsgTypeOne[100];
+  char stringMsgTypeTwo[100];
+  char stringMsgTypeThree[100];
+  char longMessage[1000];
 }messageReceived, messageToSend;
 
 struct registration allRegistration[100];
@@ -71,23 +72,39 @@ void generateSampleRegistrations() {
   }
 }
 
-void displayAllFreeTerms() {
+int isSetDate(int year, int month, int day, struct registration regist) {
+  if(regist.year == year && regist.month == month && regist.day == day) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+char* displayAllFreeTerms(int year, int month, int day) {
   int i;
+  char listToReturn[1000];
   for (i = 0; i < 100; ++i)
   {
     if(allRegistration[i].isRegistered == 0) {
-      printf("%d-%d-%d godzina:%d - doctor id: %d \n", allRegistration[i].year, allRegistration[i].month,
-        allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
-      
+      printf("---------------->>>>>>>>>>>>>%d-%d-%d godzina:%d - doctor id: %d \n", allRegistration[i].year, allRegistration[i].month,
+          allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
+      if(isSetDate(year, month, day, allRegistration[i]) == 1) {
+        printf("%d-%d-%d godzina:%d - doctor id: %d \n", allRegistration[i].year, allRegistration[i].month,
+          allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
+        // strcpy(listToReturn, allRegistration[i].doctorPID + '\0');
+        // listToReturn += allRegistration[i].doctorPID;
+      } 
     }
   }
+  return listToReturn;
 }
 
 int main(int argc, char* argv[]){
   generateSampleRegistrations();
-  int patientQueueId = msgget(9876, 0777 | IPC_CREAT);
+  int patientQueueId = msgget(9875, 0777 | IPC_CREAT);
   while(1) {
-    msgrcv(patientQueueId, &messageReceived, sizeof(messageReceived) - sizeof(long), 0, 0);
+    msgrcv(patientQueueId, &messageReceived, sizeof(messageReceived) - sizeof(long), 1, 0);
     if(messageReceived.isLogged == 0 && messageReceived.command == -1) {
       printf("pid ::: %ld\n", messageReceived.PID);
       messageToSend.isLogged = 1;
@@ -95,6 +112,10 @@ int main(int argc, char* argv[]){
       msgsnd(patientQueueId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
     }
     else {
+      messageToSend.type = messageReceived.PID;
+      int year;
+      int month;
+      int day;
       switch(messageReceived.command)
       {
         case 0: 
@@ -106,9 +127,11 @@ int main(int argc, char* argv[]){
         break;
 
         case 2:
-          messageToSend.type = messageReceived.PID;
+          year = atoi(messageReceived.stringMsgTypeOne);
+          month = atoi(messageReceived.stringMsgTypeTwo);
+          day = atoi(messageReceived.stringMsgTypeThree);
           msgsnd(patientQueueId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
-          displayAllFreeTerms();
+          displayAllFreeTerms(year, month, day);
         break;
 
         case 3: 
