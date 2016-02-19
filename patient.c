@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-struct msgbuf {
+struct msgbufPatient {
   long type; // PID of patient
   long PID;
   int command; // type of command
@@ -17,7 +17,7 @@ struct msgbuf {
   char stringMsgTypeTwo[100];
   char stringMsgTypeThree[100];
   char longMessage[1000];
-}messageReceived, messageToSend;
+}messageReceivedPatient, messageToSendPatient;
 // struct msgbuf {
 //   long type; <- PID of current patient
 //    int command <- type of command - can be registration, showing list of appointment
@@ -35,14 +35,14 @@ int main(int argc, char* argv[]){
       printf("%s\n", "Please log in using your PESEL");
       scanf("%s", PESEL);
       // strcpy(message.stringMsgTypeOne, PESEL);
-      messageToSend.type = 1;
-      messageToSend.PID = patientPID;
-      messageToSend.command = -1;
+      messageToSendPatient.type = 1;
+      messageToSendPatient.PID = patientPID;
+      messageToSendPatient.command = -1;
       printf("%s\n", "sending");
-      msgsnd(queueTypeId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
-      msgrcv(queueTypeId, &messageReceived, sizeof(messageReceived) - sizeof(long), patientPID, 0);
-      printf("%s ---- %d ---- %ld\n", "Udalo sie", messageReceived.isLogged, messageReceived.PID);
-      loggedIn = messageReceived.isLogged;
+      msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+      msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+      printf("%s ---- %d ---- %ld\n", "Udalo sie", messageReceivedPatient.isLogged, messageReceivedPatient.PID);
+      loggedIn = messageReceivedPatient.isLogged;
     }
     else {
       printf("%s\n", "0: register meeting"); 
@@ -58,7 +58,18 @@ int main(int argc, char* argv[]){
       switch(choice)
       {
         case 0: 
-          printf("%s\n", "register meeting"); 
+          printf("%s\n", "register meeting");
+          printf("%s\n", "Please, write your PESEL");
+          scanf("%s", tempMessage);
+          strcpy(messageToSendPatient.stringMsgTypeOne, tempMessage);
+          printf("%s\n", "Please, write your name");
+          scanf("%s", tempMessage);
+          strcpy(messageToSendPatient.stringMsgTypeTwo, tempMessage);
+          printf("%s\n", "Please, write your surname");
+          scanf("%s", tempMessage);
+          strcpy(messageToSendPatient.stringMsgTypeThree, tempMessage);
+          messageToSendPatient.command = 0;
+          msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
         break;
        
         case 1: 
@@ -69,15 +80,15 @@ int main(int argc, char* argv[]){
           printf("%s\n", "show list of free terms"); 
           printf("%s\n", "Write year: ");
           scanf("%s", tempMessage);
-          strcpy(messageToSend.stringMsgTypeOne, tempMessage);
+          strcpy(messageToSendPatient.stringMsgTypeOne, tempMessage);
           printf("%s\n", "Write month: ");
           scanf("%s", tempMessage);
-          strcpy(messageToSend.stringMsgTypeTwo, tempMessage);
+          strcpy(messageToSendPatient.stringMsgTypeTwo, tempMessage);
           printf("%s\n", "Write day: ");
           scanf("%s", tempMessage);
-          strcpy(messageToSend.stringMsgTypeThree, tempMessage);
-          messageToSend.command = 2;
-          msgsnd(queueTypeId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
+          strcpy(messageToSendPatient.stringMsgTypeThree, tempMessage);
+          messageToSendPatient.command = 2;
+          msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
         break;
 
         case 3: 

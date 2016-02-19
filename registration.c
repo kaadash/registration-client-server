@@ -22,7 +22,13 @@ struct registration {
   int hour;
 };
 
-struct msgbuf {
+struct doctor {
+  int doctorPID;
+  int numberOfVisits;
+  struct registration registrations[100];  
+};
+
+struct msgbufPatient {
   long type; // PID of patient
   long PID;
   int command; // type of command
@@ -31,7 +37,7 @@ struct msgbuf {
   char stringMsgTypeTwo[100];
   char stringMsgTypeThree[100];
   char longMessage[1000];
-}messageReceived, messageToSend;
+}messageReceivedPatient, messageToSendPatient;
 
 struct registration allRegistration[100];
 
@@ -83,7 +89,7 @@ int isSetDate(int year, int month, int day, struct registration regist) {
 
 char* displayAllFreeTerms(int year, int month, int day) {
   int i;
-  char listToReturn[1000];
+  char *listToReturn = malloc(1000);
   for (i = 0; i < 100; ++i)
   {
     if(allRegistration[i].isRegistered == 0) {
@@ -93,33 +99,60 @@ char* displayAllFreeTerms(int year, int month, int day) {
         printf("%d-%d-%d godzina:%d - doctor id: %d \n", allRegistration[i].year, allRegistration[i].month,
           allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
         // strcpy(listToReturn, allRegistration[i].doctorPID + '\0');
+        // strcpy(listToReturn, "ASdasdaD");
         // listToReturn += allRegistration[i].doctorPID;
-      } 
+      }
     }
   }
+  listToReturn[0] = 'A';
   return listToReturn;
+}
+void findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay){
+  int isFound = 0;
+  int i;
+  for (i = 0; i < 100; ++i)
+  {
+    if(allRegistration[i].isRegistered == 0) {
+      // if(isSetDate(year, month, day, allRegistration[i]) == 1) {
+      //     allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
+          
+      // } 
+      if(allRegistration[i].year == currentYear && allRegistration[i].month - currentMonth <= 2 && isFound == 0) {
+        isFound = 1;
+      }
+    }
+  }
 }
 
 int main(int argc, char* argv[]){
   generateSampleRegistrations();
   int patientQueueId = msgget(9875, 0777 | IPC_CREAT);
   while(1) {
-    msgrcv(patientQueueId, &messageReceived, sizeof(messageReceived) - sizeof(long), 1, 0);
-    if(messageReceived.isLogged == 0 && messageReceived.command == -1) {
-      printf("pid ::: %ld\n", messageReceived.PID);
-      messageToSend.isLogged = 1;
-      messageToSend.type = messageReceived.PID;
-      msgsnd(patientQueueId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
+    msgrcv(patientQueueId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), 1, 0);
+    if(messageReceivedPatient.isLogged == 0 && messageReceivedPatient.command == -1) {
+      printf("pid ::: %ld\n", messageReceivedPatient.PID);
+      messageToSendPatient.isLogged = 1;
+      messageToSendPatient.type = messageReceivedPatient.PID;
+      msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
     }
     else {
-      messageToSend.type = messageReceived.PID;
+      messageToSendPatient.type = messageReceivedPatient.PID;
       int year;
       int month;
       int day;
-      switch(messageReceived.command)
+      char PESEL[100];
+      char name[100];
+      char surname[100];
+      char *testText;
+      switch(messageReceivedPatient.command)
       {
         case 0: 
-          printf("%s\n", "register meeting"); 
+          printf("%s\n", "register meeting");
+          // check current date
+          // 
+          strcpy(PESEL, messageReceivedPatient.stringMsgTypeOne);
+          strcpy (name, messageReceivedPatient.stringMsgTypeTwo);
+          strcpy(surname, messageReceivedPatient.stringMsgTypeThree); 
         break;
        
         case 1: 
@@ -127,11 +160,12 @@ int main(int argc, char* argv[]){
         break;
 
         case 2:
-          year = atoi(messageReceived.stringMsgTypeOne);
-          month = atoi(messageReceived.stringMsgTypeTwo);
-          day = atoi(messageReceived.stringMsgTypeThree);
-          msgsnd(patientQueueId, &messageToSend, sizeof(messageToSend) - sizeof(long), 0);
-          displayAllFreeTerms(year, month, day);
+          year = atoi(messageReceivedPatient.stringMsgTypeOne);
+          month = atoi(messageReceivedPatient.stringMsgTypeTwo);
+          day = atoi(messageReceivedPatient.stringMsgTypeThree);
+          testText = displayAllFreeTerms(year, month, day);
+          printf("%s\n", testText);
+          msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
         break;
 
         case 3: 
