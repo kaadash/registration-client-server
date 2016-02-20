@@ -19,11 +19,28 @@ struct msgbufPatient {
   char stringMsgTypeThree[100];
   char longMessage[1000];
 }messageReceivedPatient, messageToSendPatient;
-// struct msgbuf {
-//   long type; <- PID of current patient
-//    int command <- type of command - can be registration, showing list of appointment
-//   char message[100]; <- there can be more types of messages it depends on my specification
-// }message;
+
+void insertDate() {
+  char tempMessage[100];
+  printf("%s\n", "Write year: ");
+  scanf("%s", tempMessage);
+  strcpy(messageToSendPatient.stringMsgTypeOne, tempMessage);
+  printf("%s\n", "Write month: ");
+  scanf("%s", tempMessage);
+  strcpy(messageToSendPatient.stringMsgTypeTwo, tempMessage);
+  printf("%s\n", "Write day: ");
+  scanf("%s", tempMessage);
+  strcpy(messageToSendPatient.stringMsgTypeThree, tempMessage);
+}
+
+void insertDateWithTime() {
+  char tempMessage[100];
+  insertDate();
+  printf("%s\n", "Write hour: ");
+  scanf("%s", tempMessage);
+  strcpy(messageToSendPatient.longMessage, tempMessage);
+}
+
 
 int main(int argc, char* argv[]){
   long patientPID = getpid();
@@ -72,22 +89,16 @@ int main(int argc, char* argv[]){
           messageToSendPatient.command = 0;
           msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
         break;
-       
+        
         case 1: 
           printf("%s\n", "show list of doctors in some period"); 
         break;
 
         case 2:
           printf("%s\n", "show list of free terms"); 
-          printf("%s\n", "Write year: ");
-          scanf("%s", tempMessage);
-          strcpy(messageToSendPatient.stringMsgTypeOne, tempMessage);
-          printf("%s\n", "Write month: ");
-          scanf("%s", tempMessage);
-          strcpy(messageToSendPatient.stringMsgTypeTwo, tempMessage);
-          printf("%s\n", "Write day: ");
-          scanf("%s", tempMessage);
-          strcpy(messageToSendPatient.stringMsgTypeThree, tempMessage);
+          
+          insertDate();
+
           messageToSendPatient.command = 2;
           msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
           msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
@@ -105,7 +116,13 @@ int main(int argc, char* argv[]){
         break;
         
         case 4: 
-          printf("%s\n", "show status of meeting"); 
+          printf("%s\n", "Please write ID of doctor: ");
+          scanf("%d", &messageToSendPatient.intMessage);
+          insertDateWithTime();
+          messageToSendPatient.command = 4;
+          msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+          msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+          printf("%s\n", messageReceivedPatient.longMessage);
         break;
         
         case 5: 

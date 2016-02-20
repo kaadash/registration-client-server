@@ -105,6 +105,15 @@ int isSetDate(int year, int month, int day, struct registration regist) {
   }
 }
 
+int isSetDateWithTime(int year, int month, int day, int hour, struct registration regist) {
+  if(regist.year == year && regist.month == month && regist.day == day && regist.hour == hour) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
 void intToCharWithIndent(char* text, int number, char* indent) {
   sprintf(text, "%d", number);
   strcat(text, indent);
@@ -162,7 +171,32 @@ char* displayAllFreeTermsBySpecDoctor(int doctorID) {
   return listToReturn;
 }
 
+char* displayStatusOfRegistration(int year, int month, int day, int hour, int doctorID) {
+  int i = 0;
+  int isFound = 0;
+  char *listToReturn = malloc(1000);
+  
+  while (i < numberOfDoctors * 100 && isFound == 0)
+  {
+      if(isSetDateWithTime(year, month, day, hour, allRegistration[i]) == 1 && allRegistration[i].doctorID == doctorID) {
+          convertRegistrationToChar(listToReturn, allRegistration[i]);
+          strcat(listToReturn, "status: \n");
+          if(allRegistration[i].isRegistered == 0) {
+            strcat(listToReturn, "it is not registered yet \n");
+          }
+          else {
+            strcat(listToReturn, "it is registered try other \n");
+          }
+          isFound = 1;
+      }
+      i++;
+  }
+  if(isFound == 0) {
+    strcat(listToReturn, "not found registration with this doctor ID and this date. Please try again \n");
+  }
 
+  return listToReturn;
+}
 
 
 void findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay){
@@ -213,6 +247,7 @@ int main(int argc, char* argv[]){
       int year;
       int month;
       int day;
+      int hour;
       char PESEL[100];
       char name[100];
       char surname[100];
@@ -248,6 +283,12 @@ int main(int argc, char* argv[]){
         
         case 4: 
           printf("%s\n", "show status of meeting"); 
+          year = atoi(messageReceivedPatient.stringMsgTypeOne);
+          month = atoi(messageReceivedPatient.stringMsgTypeTwo);
+          day = atoi(messageReceivedPatient.stringMsgTypeThree);
+          hour = atoi(messageReceivedPatient.longMessage);
+          strcpy(messageToSendPatient.longMessage, displayStatusOfRegistration(year, month, day, hour, messageReceivedPatient.intMessage));
+          msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
         break;
         
         case 5: 
