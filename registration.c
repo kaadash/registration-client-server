@@ -16,15 +16,16 @@ struct registration {
   char patientPESEL[100];
   char patientName[100];
   char patientSurname[100];
-  int doctorPID;
+  int doctorID;
   int day;
   int month;
   int year;
   int hour;
 };
 
-struct doctor {
-  int doctorPID;
+struct Doctor {
+  int ID;
+  char name[100];
   int numberOfVisits;
   struct registration registrations[100];  
 };
@@ -38,11 +39,23 @@ struct msgbufPatient {
   char stringMsgTypeTwo[100];
   char stringMsgTypeThree[100];
   char longMessage[1000];
-}messageReceivedPatient, messageToSendPatient;
+} messageReceivedPatient, messageToSendPatient;
 
-struct registration allRegistration[100];
+struct msgbufDoctor {
+  long type;
+  long PID;
+  int command;
+  int ID;
+  char name [100];
+}messageReceivedDoctor, messageToSendDoctor;
 
-void generateSampleRegistrations() {
+
+struct registration allRegistration[10000];
+struct Doctor doctors[100];
+int numberOfDoctors = 0;
+
+
+void generateSampleRegistrations(int doctorID) {
   int i = 0;
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
@@ -51,13 +64,14 @@ void generateSampleRegistrations() {
   int month = tm.tm_mon + 1;
   int year = tm.tm_year + 1900;
   // int currentHour = tm.tm_hour;
-  for (i = 0; i < 100; ++i)
+  for (i = numberOfDoctors; i < numberOfDoctors * 100; ++i)
   {
     allRegistration[i].isRegistered = 0;
-    allRegistration[i].doctorPID = i % 10;
-    hour = ((i % 2) + 1 )* 12;
-    if( (i % 2) + 1 == 2 ) {
-      day+=3;
+    allRegistration[i].doctorID = doctorID;
+    hour += 4;
+    if( (i % 4) == 0 ) {
+      day++;
+      hour = 0;
       if (day >= 30)
       {
         day = 1;
@@ -96,7 +110,7 @@ void convertRegistrationToChar(char* listToReturn, struct registration registrat
   char month[16];
   char day[16];
   char hour[16];
-  char doctorPID[32];
+  char doctorID[32];
   
   intToCharWithIndent(year, registrationToConvert.year, " - ");
   strcat(listToReturn, year);
@@ -110,8 +124,8 @@ void convertRegistrationToChar(char* listToReturn, struct registration registrat
   intToCharWithIndent(hour, registrationToConvert.hour, " doctor ID : ");
   strcat(listToReturn, hour);
   
-  intToCharWithIndent(doctorPID, registrationToConvert.doctorPID, " ");
-  strcat(listToReturn, doctorPID);
+  intToCharWithIndent(doctorID, registrationToConvert.doctorID, " ");
+  strcat(listToReturn, doctorID);
 
 }
 
@@ -137,7 +151,7 @@ void findNewFirstFreeRegistration(int currentYear, int currentMonth, int current
   {
     if(allRegistration[i].isRegistered == 0) {
       // if(isSetDate(year, month, day, allRegistration[i]) == 1) {
-      //     allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
+      //     allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorID);
           
       // } 
       if(allRegistration[i].year == currentYear && allRegistration[i].month - currentMonth <= 2 && isFound == 0) {
@@ -146,12 +160,26 @@ void findNewFirstFreeRegistration(int currentYear, int currentMonth, int current
     }
   }
 }
-
 int main(int argc, char* argv[]){
-  generateSampleRegistrations();
   int patientQueueId = msgget(9875, 0777 | IPC_CREAT);
+  int doctorQueueId = msgget(9874, 0777 | IPC_CREAT);
   while(1) {
+    
+    while (msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), 1, IPC_NOWAIT) != -1 && messageReceivedDoctor.command == -1)
+    {
+      printf("%s\n", "new doctor appeared");
+      messageToSendDoctor.type = messageReceivedDoctor.PID;
+      messageToSendDoctor.ID = numberOfDoctors;
+      msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
+      
+      doctors[numberOfDoctors].ID = numberOfDoctors;
+      strcpy(doctors[numberOfDoctors].name, messageReceivedDoctor.name);
+      generateSampleRegistrations(numberOfDoctors);
+      numberOfDoctors++;
+    }
+    
     msgrcv(patientQueueId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), 1, 0);
+    
     if(messageReceivedPatient.isLogged == 0 && messageReceivedPatient.command == -1) {
       printf("pid ::: %ld\n", messageReceivedPatient.PID);
       messageToSendPatient.isLogged = 1;

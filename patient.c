@@ -41,7 +41,7 @@ int main(int argc, char* argv[]){
       printf("%s\n", "sending");
       msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
       msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
-      printf("%s ---- %d ---- %ld\n", "Udalo sie", messageReceivedPatient.isLogged, messageReceivedPatient.PID);
+      printf("%s ---- %d ---- %ld\n", "Success ", messageReceivedPatient.isLogged, messageReceivedPatient.PID);
       loggedIn = messageReceivedPatient.isLogged;
     }
     else {
