@@ -171,6 +171,37 @@ char* displayAllFreeTermsBySpecDoctor(int doctorID) {
   return listToReturn;
 }
 
+char* displayAllDoctors(int year, int month, int day) {
+  int i;
+  char text[100];
+  char *listToReturn = malloc(100000);
+  int doctorsIDs[100];
+  int doctorsIDsCounter = 0;
+  for (i = 0; i < numberOfDoctors * 100; ++i)
+  {
+    if(isSetDate(year, month, day, allRegistration[i]) == 1) {
+      int j = 0;
+      int isFound = 0;
+      for (j = 0; j < numberOfDoctors; ++j)
+      {
+          if(allRegistration[i].doctorID == doctorsIDs[j]) 
+            isFound = 1;
+      }
+      if(isFound == 0) {
+        doctorsIDs[doctorsIDsCounter] = allRegistration[i].doctorID;
+        strcat(listToReturn, "doctor ID: ");
+        intToCharWithIndent(text, allRegistration[i].doctorID, "name: ");
+        strcat(listToReturn, text);
+        strcat(listToReturn, doctors[allRegistration[i].doctorID].name);
+        strcat(listToReturn, "\n");
+        doctorsIDsCounter++;
+      }
+    }
+  }
+  return listToReturn;
+}
+
+
 char* displayStatusOfRegistration(int year, int month, int day, int hour, int doctorID) {
   int i = 0;
   int isFound = 0;
@@ -199,25 +230,38 @@ char* displayStatusOfRegistration(int year, int month, int day, int hour, int do
 }
 
 
-void findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay){
+char* findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay){
   int isFound = 0;
-  int i;
-  for (i = 0; i < 100; ++i)
+  int i = 0;
+  char *communicationAboutRegistration = malloc(1000);
+  while (i < numberOfDoctors * 100 && isFound == 0)
   {
     if(allRegistration[i].isRegistered == 0) {
-      // if(isSetDate(year, month, day, allRegistration[i]) == 1) {
-      //     allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorID);
-          
-      // } 
-      if(allRegistration[i].year == currentYear && allRegistration[i].month - currentMonth <= 2 && isFound == 0) {
-        isFound = 1;
+      if(allRegistration[i].year == currentYear && allRegistration[i].month - currentMonth <= 2 ) {
+          // allRegistration[i].isRegistered = 1;
+          // allRegistration[i].patientPID = 1;
+          // allRegistration[i].patientPESEL = 1;
+          // allRegistration[i].patientSurname = 1;
+          // allRegistration[i].patientName = 1;
+          // doctors[allRegistration[i].doctorID].registrations
+
+          isFound = 1;
       }
     }
+    i++;
   }
+  return communicationAboutRegistration;
 }
 int main(int argc, char* argv[]){
   int patientQueueId = msgget(9875, 0777 | IPC_CREAT);
   int doctorQueueId = msgget(9874, 0777 | IPC_CREAT);
+
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  int currentDay = tm.tm_mday;
+  int currentMonth = tm.tm_mon + 1;
+  int currentYear = tm.tm_year + 1900;
+
   while(1) {
     
     while (msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), 1, IPC_NOWAIT) != -1 && messageReceivedDoctor.command == -1)
@@ -260,10 +304,16 @@ int main(int argc, char* argv[]){
           strcpy(PESEL, messageReceivedPatient.stringMsgTypeOne);
           strcpy (name, messageReceivedPatient.stringMsgTypeTwo);
           strcpy(surname, messageReceivedPatient.stringMsgTypeThree); 
+
         break;
        
         case 1: 
-          printf("%s\n", "show list of doctors in some period"); 
+          printf("%s\n", "show list of doctors in some period");
+          year = atoi(messageReceivedPatient.stringMsgTypeOne);
+          month = atoi(messageReceivedPatient.stringMsgTypeTwo);
+          day = atoi(messageReceivedPatient.stringMsgTypeThree);
+          strcpy(messageToSendPatient.longMessage, displayAllDoctors(year, month, day));
+          msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0); 
         break;
 
         case 2:

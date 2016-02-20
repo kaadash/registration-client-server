@@ -66,7 +66,7 @@ int main(int argc, char* argv[]){
       printf("%s\n", "0: register meeting"); 
       printf("%s\n", "1: show list of doctors in some period"); 
       printf("%s\n", "2: show list of free terms"); 
-      printf("%s\n", "3: show list of free terms to specified doctor"); 
+      printf("%s\n", "3: show list of free terms to specified doctor");
       printf("%s\n", "4: show status of meeting"); 
       printf("%s\n", "5: show list of doctors in some period"); 
       printf("%s\n", "6: log out");
@@ -92,13 +92,16 @@ int main(int argc, char* argv[]){
         
         case 1: 
           printf("%s\n", "show list of doctors in some period"); 
+          insertDate();
+          messageToSendPatient.command = 1;
+          msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+          msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+          printf("%s\n", messageReceivedPatient.longMessage);
         break;
 
         case 2:
           printf("%s\n", "show list of free terms"); 
-          
           insertDate();
-
           messageToSendPatient.command = 2;
           msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
           msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
