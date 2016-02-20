@@ -27,7 +27,7 @@ struct Doctor {
   int ID;
   char name[100];
   int numberOfVisits;
-  struct registration registrations[100];  
+  struct registration registrations[200];  
 };
 
 struct msgbufPatient {
@@ -35,11 +35,12 @@ struct msgbufPatient {
   long PID;
   int command; // type of command
   int isLogged;
+  int intMessage;
   char stringMsgTypeOne[100];
   char stringMsgTypeTwo[100];
   char stringMsgTypeThree[100];
   char longMessage[1000];
-} messageReceivedPatient, messageToSendPatient;
+}messageReceivedPatient, messageToSendPatient;
 
 struct msgbufDoctor {
   long type;
@@ -63,12 +64,16 @@ void generateSampleRegistrations(int doctorID) {
   int day = tm.tm_mday;
   int month = tm.tm_mon + 1;
   int year = tm.tm_year + 1900;
-  // int currentHour = tm.tm_hour;
-  for (i = numberOfDoctors; i < numberOfDoctors * 100; ++i)
+  int endPoint = doctorID * 100;
+  int startPoint = doctorID;
+  if (startPoint != 0) {
+    startPoint = (doctorID * 100) - 100;
+  }
+  for (i = startPoint; i < endPoint; ++i)
   {
     allRegistration[i].isRegistered = 0;
     allRegistration[i].doctorID = doctorID;
-    hour += 4;
+    hour += 6;
     if( (i % 4) == 0 ) {
       day++;
       hour = 0;
@@ -87,7 +92,7 @@ void generateSampleRegistrations(int doctorID) {
     allRegistration[i].day = day;
     allRegistration[i].month = month;
     allRegistration[i].year = year;
-
+    doctors[doctorID].registrations[i] = allRegistration[i];
   }
 }
 
@@ -131,8 +136,8 @@ void convertRegistrationToChar(char* listToReturn, struct registration registrat
 
 char* displayAllFreeTerms(int year, int month, int day) {
   int i;
-  char *listToReturn = malloc(1000);
-  for (i = 0; i < 100; ++i)
+  char *listToReturn = malloc(100000);
+  for (i = 0; i < numberOfDoctors * 100; ++i)
   {
     if(allRegistration[i].isRegistered == 0) {
       if(isSetDate(year, month, day, allRegistration[i]) == 1) {
@@ -143,6 +148,22 @@ char* displayAllFreeTerms(int year, int month, int day) {
   }
   return listToReturn;
 }
+
+char* displayAllFreeTermsBySpecDoctor(int doctorID) {
+  int i;
+  char *listToReturn = malloc(100000);
+  for (i = 0; i < 100; ++i)
+  {
+    if(doctors[doctorID].registrations[i].isRegistered == 0) {
+          convertRegistrationToChar(listToReturn, doctors[doctorID].registrations[i]);
+          strcat(listToReturn, "\n");
+    }
+  }
+  return listToReturn;
+}
+
+
+
 
 void findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay){
   int isFound = 0;
@@ -174,8 +195,9 @@ int main(int argc, char* argv[]){
       
       doctors[numberOfDoctors].ID = numberOfDoctors;
       strcpy(doctors[numberOfDoctors].name, messageReceivedDoctor.name);
-      generateSampleRegistrations(numberOfDoctors);
+      printf("number of doctors: %d\n", numberOfDoctors);
       numberOfDoctors++;
+      generateSampleRegistrations(numberOfDoctors);
     }
     
     msgrcv(patientQueueId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), 1, 0);
@@ -218,6 +240,9 @@ int main(int argc, char* argv[]){
         break;
 
         case 3: 
+          strcpy(messageToSendPatient.longMessage, displayAllFreeTermsBySpecDoctor(messageReceivedPatient.intMessage));
+          printf("%s\n", messageToSendPatient.longMessage);
+          msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
           printf("%s\n", "show list of free terms to specified doctor"); 
         break;
         

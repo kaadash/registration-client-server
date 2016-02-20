@@ -13,6 +13,7 @@ struct msgbufPatient {
   long PID;
   int command; // type of command
   int isLogged;
+  int intMessage;
   char stringMsgTypeOne[100];
   char stringMsgTypeTwo[100];
   char stringMsgTypeThree[100];
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]){
       printf("%s\n", "6: log out");
 
       scanf("%d", &choice);
-      char tempMessage[100]; 
+      char tempMessage[100];
       switch(choice)
       {
         case 0: 
@@ -94,7 +95,13 @@ int main(int argc, char* argv[]){
         break;
 
         case 3: 
-          printf("%s\n", "show list of free terms to specified doctor"); 
+          printf("%s\n", "show list of free terms to specified doctor");
+          printf("%s\n", "Please write ID of doctor: ");
+          scanf("%d", &messageToSendPatient.intMessage);
+          messageToSendPatient.command = 3;
+          msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+          msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+          printf("%s\n", messageReceivedPatient.longMessage);
         break;
         
         case 4: 
