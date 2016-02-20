@@ -89,6 +89,8 @@ int main(int argc, char* argv[]){
           strcpy(messageToSendPatient.stringMsgTypeThree, tempMessage);
           messageToSendPatient.command = 2;
           msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+          msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+          printf("%s\n", messageReceivedPatient.longMessage);
         break;
 
         case 3: 

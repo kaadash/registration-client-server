@@ -9,6 +9,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <time.h>
+
 struct registration {
   int isRegistered;
   int patientPID;
@@ -73,8 +74,6 @@ void generateSampleRegistrations() {
     allRegistration[i].month = month;
     allRegistration[i].year = year;
 
-    // printf("now: %d-%d-%d %d:hour\n", allRegistration[i].year, allRegistration[i].month,
-    //  allRegistration[i].day, allRegistration[i].hour);
   }
 }
 
@@ -87,26 +86,50 @@ int isSetDate(int year, int month, int day, struct registration regist) {
   }
 }
 
+void intToCharWithIndent(char* text, int number, char* indent) {
+  sprintf(text, "%d", number);
+  strcat(text, indent);
+}
+
+void convertRegistrationToChar(char* listToReturn, struct registration registrationToConvert) {
+  char year[16];
+  char month[16];
+  char day[16];
+  char hour[16];
+  char doctorPID[32];
+  
+  intToCharWithIndent(year, registrationToConvert.year, " - ");
+  strcat(listToReturn, year);
+  
+  intToCharWithIndent(month, registrationToConvert.month, " - ");
+  strcat(listToReturn, month);
+  
+  intToCharWithIndent(day, registrationToConvert.day, " hour: ");
+  strcat(listToReturn, day);
+  
+  intToCharWithIndent(hour, registrationToConvert.hour, " doctor ID : ");
+  strcat(listToReturn, hour);
+  
+  intToCharWithIndent(doctorPID, registrationToConvert.doctorPID, " ");
+  strcat(listToReturn, doctorPID);
+
+}
+
 char* displayAllFreeTerms(int year, int month, int day) {
   int i;
   char *listToReturn = malloc(1000);
   for (i = 0; i < 100; ++i)
   {
     if(allRegistration[i].isRegistered == 0) {
-      printf("---------------->>>>>>>>>>>>>%d-%d-%d godzina:%d - doctor id: %d \n", allRegistration[i].year, allRegistration[i].month,
-          allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
       if(isSetDate(year, month, day, allRegistration[i]) == 1) {
-        printf("%d-%d-%d godzina:%d - doctor id: %d \n", allRegistration[i].year, allRegistration[i].month,
-          allRegistration[i].day, allRegistration[i].hour, allRegistration[i].doctorPID);
-        // strcpy(listToReturn, allRegistration[i].doctorPID + '\0');
-        // strcpy(listToReturn, "ASdasdaD");
-        // listToReturn += allRegistration[i].doctorPID;
+          convertRegistrationToChar(listToReturn, allRegistration[i]);
+          strcat(listToReturn, "\n");
       }
     }
   }
-  listToReturn[0] = 'A';
   return listToReturn;
 }
+
 void findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay){
   int isFound = 0;
   int i;
@@ -143,7 +166,6 @@ int main(int argc, char* argv[]){
       char PESEL[100];
       char name[100];
       char surname[100];
-      char *testText;
       switch(messageReceivedPatient.command)
       {
         case 0: 
@@ -163,8 +185,7 @@ int main(int argc, char* argv[]){
           year = atoi(messageReceivedPatient.stringMsgTypeOne);
           month = atoi(messageReceivedPatient.stringMsgTypeTwo);
           day = atoi(messageReceivedPatient.stringMsgTypeThree);
-          testText = displayAllFreeTerms(year, month, day);
-          printf("%s\n", testText);
+          strcpy(messageToSendPatient.longMessage, displayAllFreeTerms(year, month, day));
           msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
         break;
 
