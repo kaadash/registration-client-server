@@ -216,7 +216,11 @@ char* displayStatusOfRegistration(int year, int month, int day, int hour, int do
             strcat(listToReturn, "it is not registered yet \n");
           }
           else {
-            strcat(listToReturn, "it is registered try other \n");
+            strcat(listToReturn, "it is registered by: \n");
+            strcat(listToReturn, allRegistration[i].patientName);
+            strcat(listToReturn, allRegistration[i].patientSurname);
+            strcat(listToReturn, allRegistration[i].patientPESEL);
+            printf("%s\n", allRegistration[i].patientPESEL);
           }
           isFound = 1;
       }
@@ -230,7 +234,7 @@ char* displayStatusOfRegistration(int year, int month, int day, int hour, int do
 }
 
 
-char* findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay){
+char* findNewFirstFreeRegistration(int currentYear, int currentMonth, int currentDay, long patientPID, char* PESEL, char* surname, char* name){
   int isFound = 0;
   int i = 0;
   char *communicationAboutRegistration = malloc(1000);
@@ -238,26 +242,41 @@ char* findNewFirstFreeRegistration(int currentYear, int currentMonth, int curren
   {
     if(allRegistration[i].isRegistered == 0) {
       if(allRegistration[i].year == currentYear && allRegistration[i].month - currentMonth <= 2 ) {
-          // allRegistration[i].isRegistered = 1;
-          // allRegistration[i].patientPID = 1;
-          // allRegistration[i].patientPESEL = 1;
-          // allRegistration[i].patientSurname = 1;
-          // allRegistration[i].patientName = 1;
-          // doctors[allRegistration[i].doctorID].registrations
+          allRegistration[i].isRegistered = 1;
+          allRegistration[i].patientPID = patientPID;
+          strcpy(allRegistration[i].patientPESEL, PESEL);
+          strcpy(allRegistration[i].patientSurname, surname);
+          strcpy(allRegistration[i].patientName, name);
 
+          int lastIndexOfDoctorRegistration = sizeof(doctors[allRegistration[i].doctorID].registrations)/sizeof(doctors[allRegistration[i].doctorID].registrations[0]);
+          doctors[allRegistration[i].doctorID].registrations[lastIndexOfDoctorRegistration] = allRegistration[i];
+          
+          convertRegistrationToChar(communicationAboutRegistration, allRegistration[i]);
           isFound = 1;
       }
     }
     i++;
   }
+  printf("%s\n", communicationAboutRegistration);
   return communicationAboutRegistration;
 }
+
+void updateDateAndTime(time_t baseTime, int* currentHour, int* currentDay, int* currentMonth,  int* currentYear) {
+  time_t currentTime = time(NULL);
+  int diffTime = currentTime - baseTime;
+  *currentHour = diffTime % 24;
+  *currentDay = (*currentDay + (diffTime / 24)) % 30;
+  *currentMonth = (*currentMonth + ((*currentDay + (diffTime / 24)) / 30)) % 12;
+  *currentYear = *currentYear + (*currentMonth + ((*currentDay + (diffTime / 24)) / 30)) / 12;
+}
+
 int main(int argc, char* argv[]){
   int patientQueueId = msgget(9875, 0777 | IPC_CREAT);
   int doctorQueueId = msgget(9874, 0777 | IPC_CREAT);
 
-  time_t t = time(NULL);
-  struct tm tm = *localtime(&t);
+  time_t baseTime = time(NULL);
+  struct tm tm = *localtime(&baseTime);
+  int currentHour = tm.tm_hour;
   int currentDay = tm.tm_mday;
   int currentMonth = tm.tm_mon + 1;
   int currentYear = tm.tm_year + 1900;
@@ -287,6 +306,13 @@ int main(int argc, char* argv[]){
       msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
     }
     else {
+      updateDateAndTime(baseTime, &currentHour, &currentDay, &currentMonth,  &currentYear);
+      // For displaying current date and test
+      printf("hour:  %d\n", currentHour);
+      printf("day:  %d\n", currentDay);
+      printf("month:  %d\n", currentMonth);
+      printf("month:  %d\n", currentYear);
+
       messageToSendPatient.type = messageReceivedPatient.PID;
       int year;
       int month;
@@ -299,12 +325,11 @@ int main(int argc, char* argv[]){
       {
         case 0: 
           printf("%s\n", "register meeting");
-          // check current date
-          // 
           strcpy(PESEL, messageReceivedPatient.stringMsgTypeOne);
           strcpy (name, messageReceivedPatient.stringMsgTypeTwo);
-          strcpy(surname, messageReceivedPatient.stringMsgTypeThree); 
-
+          strcpy(surname, messageReceivedPatient.stringMsgTypeThree);
+          strcpy(messageToSendPatient.longMessage, findNewFirstFreeRegistration(currentYear, currentMonth, currentDay, messageReceivedPatient.PID, PESEL, surname, name));
+          msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0); 
         break;
        
         case 1: 
@@ -338,6 +363,7 @@ int main(int argc, char* argv[]){
           day = atoi(messageReceivedPatient.stringMsgTypeThree);
           hour = atoi(messageReceivedPatient.longMessage);
           strcpy(messageToSendPatient.longMessage, displayStatusOfRegistration(year, month, day, hour, messageReceivedPatient.intMessage));
+          printf("%s\n", displayStatusOfRegistration(year, month, day, hour, messageReceivedPatient.intMessage));
           msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
         break;
         
