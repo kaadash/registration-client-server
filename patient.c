@@ -68,8 +68,9 @@ int main(int argc, char* argv[]){
       printf("%s\n", "2: show list of free terms"); 
       printf("%s\n", "3: show list of free terms to specified doctor");
       printf("%s\n", "4: show status of meeting"); 
-      printf("%s\n", "5: show list of doctors in some period"); 
-      printf("%s\n", "6: log out");
+      printf("%s\n", "5: cancel your visit"); 
+      printf("%s\n", "6: change date of your visit"); 
+      printf("%s\n", "7: log out");
 
       scanf("%d", &choice);
       char tempMessage[100];
@@ -88,6 +89,8 @@ int main(int argc, char* argv[]){
           strcpy(messageToSendPatient.stringMsgTypeThree, tempMessage);
           messageToSendPatient.command = 0;
           msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+          msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+          printf("%s\n", messageReceivedPatient.longMessage);
         break;
         
         case 1: 
@@ -129,10 +132,26 @@ int main(int argc, char* argv[]){
         break;
         
         case 5: 
-          printf("%s\n", "show list of doctors in some period"); 
+          printf("%s\n", "Please write ID of doctor: ");
+          scanf("%d", &messageToSendPatient.intMessage);
+          insertDateWithTime();
+          messageToSendPatient.command = 5;
+          msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+          msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+          printf("%s\n", messageReceivedPatient.longMessage); 
         break;
 
         case 6: 
+          printf("%s\n", "Please write ID of doctor: ");
+          scanf("%d", &messageToSendPatient.intMessage);
+          insertDateWithTime();
+          messageToSendPatient.command = 6;
+          msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
+          msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
+          printf("%s\n", messageReceivedPatient.longMessage); 
+        break;
+
+        case 7: 
           loggedIn = 0; 
           printf("%s\n", "log out correctly");
         break;
