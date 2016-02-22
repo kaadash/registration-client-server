@@ -63,6 +63,7 @@ int numberOfDoctors = 0;
 
 void generateSampleRegistrations(int doctorID, int currentYear, int currentMonth, int currentDay, int currentHour) {
   int i = 0;
+  int doctorCounter = 0;
   currentHour = 0;
   int endPoint = doctorID * 500;
   int startPoint = doctorID;
@@ -92,7 +93,8 @@ void generateSampleRegistrations(int doctorID, int currentYear, int currentMonth
     allRegistration[i].day = currentDay;
     allRegistration[i].month = currentMonth;
     allRegistration[i].year = currentYear;
-    doctors[doctorID].registrations[i] = allRegistration[i];
+    doctors[doctorID].registrations[doctorCounter] = allRegistration[i];
+    doctorCounter++;
   }
 }
 
@@ -158,12 +160,13 @@ char* displayAllFreeTerms(int year, int month, int day) {
   return listToReturn;
 }
 
-char* displayAllFreeTermsBySpecDoctor(int doctorID) {
+char* displayAllFreeTermsBySpecDoctor(int doctorID, int currentYear, int currentMonth, int currentDay) {
   int i;
+  printf("----------------------  %d\n", doctorID);
   char *listToReturn = malloc(100000);
   for (i = 0; i < 500; ++i)
   {
-    if(doctors[doctorID].registrations[i].isRegistered == 0) {
+    if(doctors[doctorID].registrations[i].isRegistered == 0 && doctors[doctorID].registrations[i].month == currentMonth && doctors[doctorID].registrations[i].year == currentYear && doctors[doctorID].registrations[i].day >= currentDay) {
           convertRegistrationToChar(listToReturn, doctors[doctorID].registrations[i]);
           strcat(listToReturn, "\n");
     }
@@ -448,7 +451,7 @@ int main(int argc, char* argv[]){
         break;
 
         case 3: 
-          strcpy(messageToSendPatient.longMessage, displayAllFreeTermsBySpecDoctor(messageReceivedPatient.intMessage));
+          strcpy(messageToSendPatient.longMessage, displayAllFreeTermsBySpecDoctor(messageReceivedPatient.intMessage, currentYear, currentMonth, currentDay));
           msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
           printf("%s\n", "show list of free terms to specified doctor"); 
         break;

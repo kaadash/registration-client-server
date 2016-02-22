@@ -62,7 +62,9 @@ int main(int argc, char* argv[]){
       msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
       msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
       loggedIn = messageReceivedPatient.isLogged;
-      numberOfWrongTries++;
+      if(loggedIn == 0) {
+        numberOfWrongTries++;
+      }
       printf("number of wrong tries: %d\n", numberOfWrongTries);
     }
     else {

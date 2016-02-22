@@ -84,6 +84,7 @@ int main(int argc, char* argv[]){
   msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
   msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), doctorPID, 0);
   ID = messageReceivedDoctor.ID;
+  printf("doctor ID: %d\n", ID);
   while(1){
       int choice = 0;
       printf("%s\n", "0: Take day off"); 
