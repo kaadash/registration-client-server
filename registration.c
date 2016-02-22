@@ -43,11 +43,16 @@ struct msgbufPatient {
 }messageReceivedPatient, messageToSendPatient;
 
 struct msgbufDoctor {
-  long type;
+  long type; // PID of patient
   long PID;
-  int command;
+  int command; // type of command
+  int intMessage;
+  char name[100];
   int ID;
-  char name [100];
+  char stringMsgTypeOne[100];
+  char stringMsgTypeTwo[100];
+  char stringMsgTypeThree[100];
+  char longMessage[1000];
 }messageReceivedDoctor, messageToSendDoctor;
 
 
@@ -297,21 +302,40 @@ char* changeDateOfRegistration(int year, int month, int day, int hour, int docto
   while (i < numberOfDoctors * 500 && isFound == 0)
   {
     if(isSetDateWithTime(year, month, day, hour, allRegistration[i]) == 1 && allRegistration[i].patientPID == patientPID && allRegistration[i].isRegistered == 1 && allRegistration[i].doctorID == doctorID) {
-        // convertRegistrationToChar(listToReturn, allRegistration[i]);
         allRegistration[i].isRegistered = 0;
         isFound = 1;
+        strcat(listToReturn, findNewFirstFreeRegistration(currentYear, currentMonth, currentDay, patientPID, allRegistration[i].patientPESEL, allRegistration[i].patientSurname, allRegistration[i].patientName));
+          printf("----------------%s\n", allRegistration[i].patientPESEL);
+        strcpy(allRegistration[i].patientPESEL, ""); 
+        strcpy(allRegistration[i].patientName, ""); 
+        strcpy(allRegistration[i].patientSurname, ""); 
     }
     i++;
   }
   if(isFound == 0) {
     strcat(listToReturn, "not found registration with this doctor ID and this date. Please try again \n");
   }
-  else {
-    printf("%s\n", "ASdasdasdasadasd");
-    strcat(listToReturn, findNewFirstFreeRegistration(currentYear, currentMonth, currentDay, patientPID, allRegistration[i].patientPESEL, allRegistration[i].patientSurname, allRegistration[i].patientName)); 
-  }
-  printf("%s\n", listToReturn);
 
+  return listToReturn;
+}
+
+char* takeDayOff(int year, int month, int day, int numberOfDays, int doctorID) {
+  int i = 0;
+  int dayCounter = 0;
+  char *listToReturn = malloc(1000);
+  while (i < numberOfDoctors * 500 && dayCounter < numberOfDays)
+  {
+    if(isSetDate(year, month, day + dayCounter, allRegistration[i]) == 1 && allRegistration[i].doctorID == doctorID) {
+        printf("days off: %d - %d\n", month, day + dayCounter);
+        allRegistration[i].isRegistered = 1;
+        strcpy(allRegistration[i].patientPESEL, ""); 
+        strcpy(allRegistration[i].patientName, ""); 
+        strcpy(allRegistration[i].patientSurname, ""); 
+        dayCounter++;
+    }
+    i++;
+  }
+  strcpy(listToReturn, "Success");
   return listToReturn;
 }
 
@@ -336,6 +360,15 @@ int main(int argc, char* argv[]){
   int currentMonth = tm.tm_mon + 1;
   int currentYear = tm.tm_year + 1900;
 
+  int year;
+  int month;
+  int day;
+  int hour;
+  int numberOfDays;
+  char PESEL[100];
+  char name[100];
+  char surname[100];
+
   while(1) {
     while (msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), 1, IPC_NOWAIT) != -1 && messageReceivedDoctor.command == -1)
     {
@@ -350,13 +383,30 @@ int main(int argc, char* argv[]){
       numberOfDoctors++;
       generateSampleRegistrations(numberOfDoctors, currentYear, currentMonth, currentDay, currentHour);
     }
+
+    if(messageReceivedDoctor.command == 0) {
+        messageToSendDoctor.type = messageReceivedDoctor.PID;
+        year = atoi(messageReceivedDoctor.stringMsgTypeOne);
+        month = atoi(messageReceivedDoctor.stringMsgTypeTwo);
+        day = atoi(messageReceivedDoctor.stringMsgTypeThree);
+        numberOfDays = messageReceivedDoctor.intMessage;
+        strcpy(messageToSendDoctor.longMessage, takeDayOff(year, month, day, numberOfDays, messageReceivedDoctor.ID));
+        msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
+    }
     
     msgrcv(patientQueueId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), 1, 0);
     messageToSendPatient.type = messageReceivedPatient.PID;
     
     if(messageReceivedPatient.isLogged == 0 && messageReceivedPatient.command == -1) {
       printf("pid ::: %ld\n", messageReceivedPatient.PID);
-      messageToSendPatient.isLogged = 1;
+      char password[10];
+      sprintf(password, "%ld", messageReceivedPatient.PID);
+      if(strcmp(messageReceivedPatient.stringMsgTypeOne, password)){
+        messageToSendPatient.isLogged = 0;
+      }
+      else {
+        messageToSendPatient.isLogged = 1;
+      }
       msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
     }
     else {
@@ -368,13 +418,6 @@ int main(int argc, char* argv[]){
       printf("month:  %d\n", currentYear);
 
       messageToSendPatient.type = messageReceivedPatient.PID;
-      int year;
-      int month;
-      int day;
-      int hour;
-      char PESEL[100];
-      char name[100];
-      char surname[100];
       switch(messageReceivedPatient.command)
       {
         case 0: 
@@ -448,6 +491,7 @@ int main(int argc, char* argv[]){
        
         default:
           printf("%s\n", "choose other option"); 
+          break;
       }
     }
   }

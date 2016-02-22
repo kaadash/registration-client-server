@@ -44,25 +44,29 @@ void insertDateWithTime() {
 
 int main(int argc, char* argv[]){
   long patientPID = getpid();
+  printf("%ld\n", patientPID);
   int queueTypeId = msgget(9875, 0777 | IPC_CREAT);
   int loggedIn = 0;
+  int numberOfWrongTries = 0;
   int choice;
   char PESEL[100];
   while(1){
     if(loggedIn != 1) {
-      printf("%s\n", "Please log in using your PESEL");
+      printf("%s\n", "Please log in using your password (PID)");
       scanf("%s", PESEL);
-      // strcpy(message.stringMsgTypeOne, PESEL);
+      strcpy(messageToSendPatient.stringMsgTypeOne, PESEL);
       messageToSendPatient.type = 1;
       messageToSendPatient.PID = patientPID;
       messageToSendPatient.command = -1;
       printf("%s\n", "sending");
       msgsnd(queueTypeId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
       msgrcv(queueTypeId, &messageReceivedPatient, sizeof(messageReceivedPatient) - sizeof(long), patientPID, 0);
-      printf("%s ---- %d ---- %ld\n", "Success ", messageReceivedPatient.isLogged, messageReceivedPatient.PID);
       loggedIn = messageReceivedPatient.isLogged;
+      numberOfWrongTries++;
+      printf("number of wrong tries: %d\n", numberOfWrongTries);
     }
     else {
+      printf("%s ---- %d ---- %ld\n", "Success ", messageReceivedPatient.isLogged, messageReceivedPatient.PID);
       printf("%s\n", "0: register meeting"); 
       printf("%s\n", "1: show list of doctors in some period"); 
       printf("%s\n", "2: show list of free terms"); 

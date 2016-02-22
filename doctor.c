@@ -9,12 +9,32 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 struct msgbufDoctor {
-  long type;
+  long type; // PID of patient
   long PID;
-  int command;
+  int command; // type of command
+  int intMessage;
+  char name[100];
   int ID;
-  char name [100];
+  char stringMsgTypeOne[100];
+  char stringMsgTypeTwo[100];
+  char stringMsgTypeThree[100];
+  char longMessage[1000];
 }messageReceivedDoctor, messageToSendDoctor;
+
+void insertDateAndNumberOfDays() {
+  char tempMessage[100];
+  printf("%s\n", "Write year: ");
+  scanf("%s", tempMessage);
+  strcpy(messageToSendDoctor.stringMsgTypeOne, tempMessage);
+  printf("%s\n", "Write month: ");
+  scanf("%s", tempMessage);
+  strcpy(messageToSendDoctor.stringMsgTypeTwo, tempMessage);
+  printf("%s\n", "Write day: ");
+  scanf("%s", tempMessage);
+  strcpy(messageToSendDoctor.stringMsgTypeThree, tempMessage);
+  printf("%s\n", "Write number of days: ");
+  scanf("%d", &messageToSendDoctor.intMessage);
+}
 
 char* createRandomName() {
   int randomNumber = rand() % 4;
@@ -56,41 +76,33 @@ int main(int argc, char* argv[]){
   srand(time(NULL));
   int doctorQueueId = msgget(9874, 0777 | IPC_CREAT);
   long doctorPID = getpid();
+  messageToSendDoctor.type = 1;
+  messageToSendDoctor.command = -1;
+  messageToSendDoctor.PID = doctorPID;
+  strcpy(messageToSendDoctor.name, createRandomName());
+  int ID = 0;
+  msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
+  msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), doctorPID, 0);
+  ID = messageReceivedDoctor.ID;
   while(1){
       int choice = 0;
-      messageToSendDoctor.type = 1;
-      messageToSendDoctor.command = -1;
-      messageToSendDoctor.PID = doctorPID;
-      strcpy(messageToSendDoctor.name, createRandomName());
-      int ID = 0;
-      msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
-      
-      msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), doctorPID, 0);
-      printf("%s ---- %d ---- %d\n", "Success ", 1, messageReceivedDoctor.ID);
-      
       printf("%s\n", "0: Take day off"); 
-      printf("%s\n", "2: show list of free terms"); 
 
       scanf("%d", &choice);
-      char tempMessage[100]; 
       switch(choice)
       {
         case 0:
-          printf("%s\n", "starting year");
-          printf("%s\n", "starting month");
-          printf("%s\n", "starting day");
-          printf("%s\n", "how much days");
-          // 
-        break;
-       
-        case 1:
+          insertDateAndNumberOfDays();
+          messageToSendDoctor.command = 0;
+          messageToSendDoctor.ID = ID;
+          msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
+          msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), doctorPID, 0);
+          printf("%s\n", messageReceivedDoctor.longMessage);
         break;
 
-        case 2:
-        break;
-       
         default:
           printf("%s\n", "choose other option"); 
+          break;
     }
   }
   return 0;
