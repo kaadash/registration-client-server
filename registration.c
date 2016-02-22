@@ -27,7 +27,12 @@ struct Doctor {
   int ID;
   char name[100];
   int numberOfVisits;
-  struct registration registrations[500];  
+  struct registration registrations[500];
+};
+
+struct Patient {
+  int ID;
+  int isLogged;
 };
 
 struct msgbufPatient {
@@ -58,6 +63,7 @@ struct msgbufDoctor {
 
 struct registration allRegistration[10000];
 struct Doctor doctors[100];
+struct Patient patients[100];
 int numberOfDoctors = 0;
 
 
@@ -355,6 +361,7 @@ void updateDateAndTime(time_t baseTime, int* currentHour, int* currentDay, int* 
 int main(int argc, char* argv[]){
   int patientQueueId = msgget(9875, 0777 | IPC_CREAT);
   int doctorQueueId = msgget(9874, 0777 | IPC_CREAT);
+  int numberOfPatients = 0;
 
   time_t baseTime = time(NULL);
   struct tm tm = *localtime(&baseTime);
@@ -409,6 +416,8 @@ int main(int argc, char* argv[]){
       }
       else {
         messageToSendPatient.isLogged = 1;
+        patients[numberOfPatients].ID = messageReceivedPatient.PID;
+        patients[numberOfPatients].isLogged = 1;
       }
       msgsnd(patientQueueId, &messageToSendPatient, sizeof(messageToSendPatient) - sizeof(long), 0);
     }
