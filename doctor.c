@@ -2,24 +2,18 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <time.h>  
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-struct msgbufDoctor {
-  long type; // PID of patient
-  long PID;
-  int command; // type of command
-  int intMessage;
-  char name[100];
-  int ID;
-  char stringMsgTypeOne[100];
-  char stringMsgTypeTwo[100];
-  char stringMsgTypeThree[100];
-  char longMessage[1000];
-}messageReceivedDoctor, messageToSendDoctor;
+#include "structures.h"
+#include "helpers.h"
+
+struct msgbufDoctor messageReceivedDoctor, messageToSendDoctor;
+
 
 void insertDateAndNumberOfDays() {
   char tempMessage[100];
@@ -34,42 +28,6 @@ void insertDateAndNumberOfDays() {
   strcpy(messageToSendDoctor.stringMsgTypeThree, tempMessage);
   printf("%s\n", "Write number of days: ");
   scanf("%d", &messageToSendDoctor.intMessage);
-}
-
-char* createRandomName() {
-  int randomNumber = rand() % 4;
-  int i;
-  char *listToReturn = malloc(100);
-  char firstName [] = "Anna";
-  char secondName [] = "Jan";
-  char thirdName [] = "Gustaw";
-  char forthName [] = "Karolina";
-  for (i = 0; i < 2; ++i)
-  {
-    randomNumber = rand() % 4;
-    switch(randomNumber) {
-      case 0:
-        strcat(listToReturn, firstName);
-      break;
-
-      case 1:
-        strcat(listToReturn, secondName);
-      break;
-
-      case 2:
-        strcat(listToReturn, thirdName);
-      break;
-
-      case 3:
-        strcat(listToReturn, forthName);
-      break;
-
-      default:
-      break;
-    }
-    strcat(listToReturn, " ");
-  }
-  return listToReturn;
 }
 
 int main(int argc, char* argv[]){

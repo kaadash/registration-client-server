@@ -8,17 +8,9 @@
 #include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-struct msgbufPatient {
-  long type; // PID of patient
-  long PID;
-  int command; // type of command
-  int isLogged;
-  int intMessage;
-  char stringMsgTypeOne[100];
-  char stringMsgTypeTwo[100];
-  char stringMsgTypeThree[100];
-  char longMessage[1000];
-}messageReceivedPatient, messageToSendPatient;
+#include "structures.h"
+
+struct msgbufPatient messageReceivedPatient, messageToSendPatient;
 
 void insertDate() {
   char tempMessage[100];
