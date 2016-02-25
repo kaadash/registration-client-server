@@ -37,11 +37,11 @@ int main(int argc, char* argv[]){
     {
       printf("%s\n", "new doctor appeared");
       messageToSendDoctor.type = messageReceivedDoctor.PID;
-      messageToSendDoctor.ID = numberOfDoctors;
+      messageToSendDoctor.intMessage = numberOfDoctors;
       msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
       
       doctors[numberOfDoctors].ID = numberOfDoctors;
-      strcpy(doctors[numberOfDoctors].name, messageReceivedDoctor.name);
+      strcpy(doctors[numberOfDoctors].name, messageReceivedDoctor.stringMsgTypeOne);
       printf("number of doctors: %d\n", numberOfDoctors);
       numberOfDoctors++;
       generateSampleRegistrations(numberOfDoctors, currentYear, currentMonth, currentDay, currentHour);
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
         month = atoi(messageReceivedDoctor.stringMsgTypeTwo);
         day = atoi(messageReceivedDoctor.stringMsgTypeThree);
         numberOfDays = messageReceivedDoctor.intMessage;
-        strcpy(messageToSendDoctor.longMessage, takeDayOff(year, month, day, numberOfDays, messageReceivedDoctor.ID));
+        strcpy(messageToSendDoctor.longMessage, takeDayOff(year, month, day, numberOfDays, messageReceivedDoctor.intMessage));
         msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
     }
     

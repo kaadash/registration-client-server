@@ -10,7 +10,7 @@
 #include <sys/msg.h>
 #include "structures.h"
 
-struct msgbufPatient messageReceivedPatient, messageToSendPatient;
+struct msgbuf messageReceivedPatient, messageToSendPatient;
 
 void insertDate() {
   char tempMessage[100];

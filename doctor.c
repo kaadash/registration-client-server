@@ -12,7 +12,7 @@
 #include "structures.h"
 #include "helpers.h"
 
-struct msgbufDoctor messageReceivedDoctor, messageToSendDoctor;
+struct msgbuf messageReceivedDoctor, messageToSendDoctor;
 
 
 void insertDateAndNumberOfDays() {
@@ -37,11 +37,11 @@ int main(int argc, char* argv[]){
   messageToSendDoctor.type = 1;
   messageToSendDoctor.command = -1;
   messageToSendDoctor.PID = doctorPID;
-  strcpy(messageToSendDoctor.name, createRandomName());
+  strcpy(messageToSendDoctor.stringMsgTypeOne, createRandomName());
   int ID = 0;
   msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
   msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), doctorPID, 0);
-  ID = messageReceivedDoctor.ID;
+  ID = messageReceivedDoctor.intMessage;
   printf("doctor ID: %d\n", ID);
   while(1){
       int choice = 0;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
         case 0:
           insertDateAndNumberOfDays();
           messageToSendDoctor.command = 0;
-          messageToSendDoctor.ID = ID;
+          messageToSendDoctor.intMessage = ID;
           msgsnd(doctorQueueId, &messageToSendDoctor, sizeof(messageToSendDoctor) - sizeof(long), 0);
           msgrcv(doctorQueueId, &messageReceivedDoctor, sizeof(messageReceivedDoctor) - sizeof(long), doctorPID, 0);
           printf("%s\n", messageReceivedDoctor.longMessage);
